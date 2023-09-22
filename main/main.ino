@@ -15,12 +15,19 @@ int x_offsets[] = {10, 48, 60, 110, 125};
 int y_offsets[] = {35, 75, 85, 105, 110};
 int seg_lengths[] = {11, 32, 11, 48, 11, 18, 11, 27, 10, 15, 11, 16, 12, 27, 11, 17, 12, 48, 11, 31};
 
-
 struct coordinate {
   int x;
   int y;
 };
 typedef struct coordinate coordinate;
+
+struct pixelData {
+  coordinate coord;
+  float percent;
+  int box;
+  int seg;
+};
+typedef struct pixelData pixelData;
 
 // Run segment test
 void testSegs();
@@ -31,37 +38,50 @@ void testDirs();
 // Fill light strip with a color, start inclusive, end exclusive.
 void fill(int start, int end, int color);
 
-// Get the coordinate corresponding to a pixel index.
-coordinate getCoordinateFromPixel(int pixel);
+// Get the coordinate and other data corresponding to a pixel index.
+pixelData getPixelData(int pixel);
 
 // Get a coordinate from a corner of the SONUS logo
 coordinate getCornerCoordinate(int x, int y);
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("Hello world!");
+  Serial.println("Starting SONUS program!");
 
   FastLED.addLeds<NEOPIXEL, PIN>(leds, NUM_LEDS);
-  FastLED.setBrightness(60);
+  //FastLED.setBrightness(20);
 
-  delay(3000);
+  /*for (int i = 0; i < NUM_LEDS; i++) {
+    pixelData data = getPixelData(i);
 
-  for (int i = 0; i < NUM_LEDS; i++) {
-    coordinate coord = getCoordinateFromPixel(i);
-    Serial.printf("Pixel %i has x %i y %i\n", i, coord.x, coord.y);
+    leds[i].setHSV(floor(data.percent * 255), 255, 255);
+  }
+  FastLED.show();*/
 
-    if (coord.y > 200) {
-      leds[i] = CRGB::Red;
-    } else {
-      //leds[i] = CRGB::Green;
+  float pixelOffset = 0;
+  const int STRIPE_WIDTH = 120;
+
+  while (true) {
+    for (int i = 0; i < NUM_LEDS; i++) {
+      pixelData data = getPixelData(i);
+
+      //float brightness = sin((data.coord.x + data.coord.y) / 20);
+      //leds[i].setRGB(floor(brightness * 255), 0, 0);
+
+      int pix = floor((data.coord.x + data.coord.y + pixelOffset) / STRIPE_WIDTH);
+      if (pix % 2 == 0) {
+        leds[i] = CRGB::Black;
+      } else {
+        leds[i] = CRGB::Red;
+      }
     }
     FastLED.show();
+    delay(10);
+    pixelOffset += 4;
   }
 }
 
-void loop() {
-  
-}
+void loop() {}
 
 // Run segment test
 void testSegs() {
@@ -78,25 +98,6 @@ void testSegs() {
   }
 }
 
-// Run direction test
-/*void testDirs() {
-  for (int i = 0; i < NUM_LEDS; i++) {
-    int dir = (getSegmentFromPixel(i) % 4);
-    if (dir == 0) {
-      leds[i] = CRGB::Red;
-    } else if (dir == 1) {
-      leds[i] = CRGB::Green;
-    } else if (dir == 2) {
-      leds[i] = CRGB::Blue;
-    } else if (dir == 3) {
-      leds[i] = CRGB::Black;
-    } else {
-      leds[i] = CRGB::White;
-    }
-  }
-  FastLED.show();
-}*/
-
 // Fill light strip with a color, start inclusive, end exclusive.
 void fill(int start, int end, int color) {
   for (int i = start; i < end; i++) {
@@ -106,8 +107,8 @@ void fill(int start, int end, int color) {
   FastLED.show();
 }
 
-// Get the coordinate corresponding to a pixel index.
-coordinate getCoordinateFromPixel(int pixel) {
+// Get the coordinate and other data corresponding to a pixel index.
+pixelData getPixelData(int pixel) {
 
   // Get the segment that the pixel belongs to,
   // and the percentage of the way the pixel is along the segment
@@ -124,7 +125,6 @@ coordinate getCoordinateFromPixel(int pixel) {
     }
     startPixel = endPixel;
   }
-  Serial.printf("%.4f\n", percent);
 
   // Get the segment direction and box number
   int dir = seg % 4;
@@ -177,7 +177,15 @@ coordinate getCoordinateFromPixel(int pixel) {
     .y = floor((endCoord.y - startCoord.y) * percent + startCoord.y)
   };
 
-  return coord;
+  // Create pixel data
+  pixelData data = {
+    .coord = coord,
+    .percent = percent,
+    .box = box,
+    .seg = seg
+  };
+
+  return data;
 }
 
 // Get a coordinate from a corner of the SONUS logo
