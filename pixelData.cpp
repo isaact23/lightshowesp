@@ -88,9 +88,6 @@ pixelData getPixelData(int pixel) {
 // Get a coordinate from a corner of the SONUS logo
 coordinate getCornerCoordinate(int x, int y) {
 
-  int x_offsets[] = {10, 48, 60, 110, 125};
-  int y_offsets[] = {35, 75, 85, 105, 110};
-
   int xCoord;
   int yCoord;
 

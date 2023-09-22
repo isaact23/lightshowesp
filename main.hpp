@@ -4,7 +4,7 @@
 #define PIN 4
 #define NUM_LEDS 390
 
-#include <FastLED.h>
+#include "fastLedInclude.hpp"
 #include "rules.hpp"
 #include "pixelData.hpp"
 
