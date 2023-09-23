@@ -39,6 +39,9 @@ void fill(int start, int end, int color);
 // Rule to render diagonal stripes
 CRGB diagStripes(pixelData data, float timeElapsed);
 
+// Rule to render diagonal rainbow
+CRGB rainbowStripes(pixelData data, float timeElapsed);
+
 int x_offsets[] = {10, 48, 60, 110, 125};
 int y_offsets[] = {35, 75, 85, 105, 110};
 int seg_lengths[] = {11, 32, 11, 48, 11, 18, 11, 27, 10, 15, 11, 16, 12, 27, 11, 17, 12, 48, 11, 31};
@@ -57,6 +60,9 @@ void sonusProgram() {
   Serial.println("Starting SONUS program!");
 
   FastLED.addLeds<NEOPIXEL, PIN>(leds, NUM_LEDS);
+
+  //fill(CRGB::Black, 0, NUM_LEDS);
+  //return;
 
   float timeSinceStart = 0;
 
@@ -211,4 +217,35 @@ CRGB diagStripes(pixelData data, float timeElapsed) {
   } else {
     return CRGB::Red;
   }
+}
+
+// Rule to render diagonal rainbow
+CRGB rainbowStripes(pixelData data, float timeElapsed) {
+
+  const float SPEED = 300;
+
+  int pix = (data.coord.x + data.coord.y + (timeElapsed * SPEED));
+  //int stripe = floor(pix / STRIPE_WIDTH);
+
+  CRGB color;
+  color.setHSV(pix, 255, 255);
+  return color;
+
+  // Show 10 stripes, then hide 30 stripes
+  /*switch (stripe % 6) {
+    case 0:
+      return CRGB::Red;
+    case 1:
+      return CRGB::Orange;
+    case 2:
+      return CRGB::Yellow;
+    case 3:
+      return CRGB::Green;
+    case 4:
+      return CRGB::Blue;
+    case 5:
+      return CRGB::Purple;
+  }*/
+
+  
 }
