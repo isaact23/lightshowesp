@@ -1,8 +1,10 @@
 #include <FastLED.h>
 #include <math.h>
 
-#define PIN 4
+#define PIN 27
+#define PIN2 26
 #define NUM_LEDS 390
+#define NUM_LEDS2 32
 
 #define WIDTH 300
 #define HEIGHT 300
@@ -47,6 +49,7 @@ int y_offsets[] = {35, 75, 85, 105, 110};
 int seg_lengths[] = {11, 32, 11, 48, 11, 18, 11, 27, 10, 15, 11, 16, 12, 27, 11, 17, 12, 48, 11, 31};
 
 CRGB leds[NUM_LEDS];
+CRGB leds2[NUM_LEDS2];
 
 void setup() {
   sonusProgram();
@@ -60,21 +63,45 @@ void sonusProgram() {
   Serial.println("Starting SONUS program!");
 
   FastLED.addLeds<NEOPIXEL, PIN>(leds, NUM_LEDS);
+  FastLED.addLeds<NEOPIXEL, PIN2>(leds2, NUM_LEDS2);
 
   //fill(CRGB::Black, 0, NUM_LEDS);
   //return;
 
   float timeSinceStart = 0;
 
-  CRGB (*rule)(pixelData data, float timeElapsed) = diagStripes;
+  CRGB (*rule)(pixelData data, float timeElapsed);
 
   while (true) {
+
+    switch (((int)timeSinceStart/10)%3) {
+      case 0: {
+        rule = red; break;
+      }
+      case 1: {
+        rule = diagStripes; break;
+      }
+      case 2: {
+        rule = rainbowStripes; break;
+      }
+    }
 
     for (int i = 0; i < NUM_LEDS; i++) {
       pixelData data = getPixelData(i);
 
       leds[i] = rule(data, timeSinceStart);
     }
+
+    for (int i = 0; i < NUM_LEDS2; i++) {
+      CRGB color;
+      if ((int)((i + (timeSinceStart * 16)) / 8) % 2 == 0) {
+        color.setHSV(0, 255, 100);
+      } else {
+        color.setHSV(180, 255, 100);
+      }
+      leds2[i] = color;
+    }
+
     FastLED.show();
     delay(10);
     timeSinceStart += 0.01f;
@@ -202,50 +229,43 @@ coordinate getCornerCoordinate(int x, int y) {
   return corner;
 }
 
+
+// Rule to render diagonal stripes
+CRGB red(pixelData data, float timeElapsed) {
+  return CRGB::Red;
+}
+
 // Rule to render diagonal stripes
 CRGB diagStripes(pixelData data, float timeElapsed) {
 
   const int STRIPE_WIDTH = 80;
-  const float SPEED = 300;
+  const float SPEED = 200;
 
   int pix = (data.coord.x + data.coord.y + (timeElapsed * SPEED));
-  int stripe = floor(pix / STRIPE_WIDTH);
+
+  CRGB color;
+  color.setHSV(255, 255, sin(((float)pix)/100)*255);
+  return color;
+
+
+  /*
 
   // Show 10 stripes, then hide 30 stripes
   if (stripe % 2 == 0 && (stripe / 10) % 4 == 0 ) {
     return CRGB::Black;
   } else {
     return CRGB::Red;
-  }
+  }*/
 }
 
 // Rule to render diagonal rainbow
 CRGB rainbowStripes(pixelData data, float timeElapsed) {
 
-  const float SPEED = 300;
+  const float SPEED = 250;
 
   int pix = (data.coord.x + data.coord.y + (timeElapsed * SPEED));
-  //int stripe = floor(pix / STRIPE_WIDTH);
 
   CRGB color;
   color.setHSV(pix, 255, 255);
   return color;
-
-  // Show 10 stripes, then hide 30 stripes
-  /*switch (stripe % 6) {
-    case 0:
-      return CRGB::Red;
-    case 1:
-      return CRGB::Orange;
-    case 2:
-      return CRGB::Yellow;
-    case 3:
-      return CRGB::Green;
-    case 4:
-      return CRGB::Blue;
-    case 5:
-      return CRGB::Purple;
-  }*/
-
-  
 }
